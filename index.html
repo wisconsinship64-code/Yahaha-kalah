@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>WNI Cyber Combat Arena - Mobile God Mode</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: none;
+        }
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background-color: #030408;
+            color: #f1f5f9;
+            overflow: hidden;
+        }
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+        canvas {
+            background: radial-gradient(circle at center, #0b1120 0%, #030408 100%);
+            touch-action: none;
+        }
+        .touch-btn {
+            background: rgba(15, 23, 42, 0.75);
+            border: 2px solid rgba(59, 130, 246, 0.5);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transition: transform 0.05s ease, background-color 0.05s ease;
+        }
+        .touch-btn:active {
+            background: rgba(59, 130, 246, 0.5);
+            transform: scale(0.92);
+        }
+        .touch-btn-danger {
+            border-color: rgba(239, 68, 68, 0.7);
+            background: rgba(15, 23, 42, 0.85);
+        }
+        .touch-btn-danger:active {
+            background: rgba(239, 68, 68, 0.5);
+        }
+        .touch-btn-shield {
+            border-color: rgba(168, 85, 247, 0.7);
+        }
+        .touch-btn-shield:active {
+            background: rgba(168, 85, 247, 0.5);
+        }
+        ::-webkit-scrollbar {
+            width: 3px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col justify-between p-2 select-none overflow-hidden">
+
+    <!-- Header / HUD -->
+    <header class="w-full max-w-6xl mx-auto flex justify-between items-center px-2 py-1 z-10 border-b border-slate-800/80">
+        <div class="flex items-center gap-2">
+            <h1 class="text-sm sm:text-xl font-black tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500">
+                CYBER ARENA <span class="text-[9px] px-1.5 py-0.5 bg-red-600/30 text-red-400 border border-red-500/50 rounded">WNI GOD MODE</span>
+            </h1>
+        </div>
+
+        <div class="flex items-center gap-3 bg-slate-900/90 px-3 py-1 rounded-xl border border-slate-800">
+            <div class="text-center">
+                <div class="text-[8px] text-cyan-400 uppercase tracking-widest font-bold">YOU</div>
+                <div id="playerScore" class="text-sm sm:text-base font-bold text-cyan-400">0</div>
+            </div>
+            <div class="text-sm font-black text-slate-600">:</div>
+            <div class="text-center">
+                <div class="text-[8px] text-red-500 uppercase tracking-widest font-bold">WNI AI</div>
+                <div id="aiScore" class="text-sm sm:text-base font-bold text-red-500">0</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Arena Container -->
+    <main class="relative flex-grow w-full max-w-6xl mx-auto my-1 flex justify-center items-center overflow-hidden rounded-xl border border-cyan-900/40 shadow-2xl shadow-cyan-950/30">
+        
+        <!-- Health Bars Floating Overlay -->
+        <div class="absolute top-2 left-3 right-3 z-10 flex justify-between gap-4 pointer-events-none">
+            <!-- Player HP -->
+            <div class="w-1/2 max-w-[240px]">
+                <div class="flex justify-between text-[10px] font-bold mb-0.5">
+                    <span class="text-cyan-400">PLAYER</span>
+                    <span id="playerHpText" class="text-slate-300">100 / 100</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-950/80 rounded-full overflow-hidden border border-cyan-500/40">
+                    <div id="playerHpBar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-75 w-full"></div>
+                </div>
+            </div>
+
+            <!-- AI HP -->
+            <div class="w-1/2 max-w-[240px]">
+                <div class="flex justify-between text-[10px] font-bold mb-0.5">
+                    <span id="aiHpText" class="text-slate-400">INVINCIBLE</span>
+                    <span class="text-red-500">WNI AI ENGINE</span>
+                </div>
+                <div class="w-full h-2.5 bg-slate-950/80 rounded-full overflow-hidden border border-red-500/40">
+                    <div id="aiHpBar" class="h-full bg-gradient-to-r from-orange-500 via-red-500 to-purple-600 transition-all duration-75 w-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Matrix Code Telemetry Stream Overlay -->
+        <div class="absolute top-10 right-3 z-0 w-44 sm:w-56 bg-slate-950/80 backdrop-blur border border-slate-800 rounded-lg p-2 pointer-events-none hidden sm:block">
+            <div class="text-[9px] font-bold text-slate-400 mb-1 border-b border-slate-800 pb-1 flex justify-between">
+                <span>AI TELEMETRY</span>
+                <span class="text-cyan-400 code-font">999 FPS</span>
+            </div>
+            <div id="logConsole" class="code-font text-[9px] space-y-1 max-h-24 overflow-hidden text-slate-400">
+                <div class="text-red-400">[SYS] Instant Kill Protocol armed</div>
+                <div class="text-yellow-400">[AI] Aim-lock 100% target acquired</div>
+            </div>
+        </div>
+
+        <!-- Game Canvas -->
+        <canvas id="gameCanvas" class="w-full h-full rounded-xl"></canvas>
+
+        <!-- Game Over Modal Overlay -->
+        <div id="gameOverlay" class="absolute inset-0 bg-slate-950/95 backdrop-blur-md flex flex-col justify-center items-center rounded-xl hidden z-30 p-4">
+            <div class="text-red-500 text-xs code-font tracking-widest mb-1">[ FATAL ERROR: DEFEAT DETECTED ]</div>
+            <h2 id="overlayTitle" class="text-2xl sm:text-4xl font-black text-red-500 mb-2 tracking-wider text-center animate-pulse">OBLITERATED BY WNI AI</h2>
+            <p id="overlaySub" class="text-slate-300 mb-6 text-xs sm:text-sm max-w-sm text-center">No openings found. Instant Tactical Boom payload delivered.</p>
+            <button onclick="restartRound()" class="px-8 py-3 bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 text-white font-bold rounded-xl shadow-xl hover:brightness-125 transition transform active:scale-95 text-xs sm:text-sm tracking-wider">
+                COBA LAGI (RETRY MATCH)
+            </button>
+        </div>
+    </main>
+
+    <!-- Mobile Touch Controls Layout -->
+    <footer class="w-full max-w-6xl mx-auto flex justify-between items-center px-2 py-1 gap-2 z-20">
+        <!-- Analog Touch Joystick (Left Side) -->
+        <div id="joystickZone" class="relative w-28 h-28 sm:w-32 sm:h-32 bg-slate-900/70 rounded-full border-2 border-cyan-500/40 flex justify-center items-center touch-none shadow-lg shadow-cyan-950/40">
+            <div class="text-[8px] text-cyan-400/40 font-mono absolute top-2 pointer-events-none">JOYSTICK</div>
+            <div id="joystickKnob" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-cyan-400 to-blue-600 shadow-lg shadow-cyan-500/60 absolute transition-transform duration-75"></div>
+        </div>
+
+        <!-- Touch Action Buttons (Right Side) -->
+        <div class="flex gap-2 sm:gap-3 items-center">
+            <!-- Shield Button -->
+            <button id="btnShield" class="touch-btn touch-btn-shield w-13 h-13 sm:w-16 sm:h-16 p-2 rounded-2xl flex flex-col items-center justify-center text-purple-400 font-bold text-xs shadow-lg active:scale-95">
+                <span class="text-sm">🛡️</span>
+                <span class="text-[8px]">PARRY</span>
+            </button>
+            <!-- Dash Button -->
+            <button id="btnDash" class="touch-btn w-13 h-13 sm:w-16 sm:h-16 p-2 rounded-2xl flex flex-col items-center justify-center text-cyan-300 font-bold text-xs shadow-lg active:scale-95">
+                <span class="text-sm">⚡</span>
+                <span class="text-[8px]">DASH</span>
+            </button>
+            <!-- Fire Laser Attack Button -->
+            <button id="btnAttack" class="touch-btn touch-btn-danger w-16 h-16 sm:w-20 sm:h-20 rounded-full flex flex-col items-center justify-center text-red-400 font-black text-sm shadow-lg shadow-red-900/50 active:scale-95">
+                <span class="text-base sm:text-xl">🔥</span>
+                <span class="text-[9px]">ATTACK</span>
+            </button>
+        </div>
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const playerScoreEl = document.getElementById('playerScore');
+        const aiScoreEl = document.getElementById('aiScore');
+        const playerHpBar = document.getElementById('playerHpBar');
+        const playerHpText = document.getElementById('playerHpText');
+        const gameOverlay = document.getElementById('gameOverlay');
+        const logConsole = document.getElementById('logConsole');
+
+        // Audio Effects Generator (Web Audio API)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function playSound(type) {
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if (type === 'shoot') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(700, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.08);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.08);
+            } else if (type === 'boom') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(25, audioCtx.currentTime + 0.6);
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.6);
+            } else if (type === 'parry') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            }
+        }
+
+        let isGameOver = false;
+        let playerScore = 0;
+        let aiScore = 0;
+        let touchStick = { x: 0, y: 0, active: false };
+        let directTouchTarget = null;
+        const keys = { w: false, a: false, s: false, d: false, space: false, shift: false, e: false };
+
+        // Handle Responsive Screen Size
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Mobile Analog Virtual Joystick
+        const joystickZone = document.getElementById('joystickZone');
+        const joystickKnob = document.getElementById('joystickKnob');
+
+        if (joystickZone) {
+            const handleTouch = (e) => {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const rect = joystickZone.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                let dx = touch.clientX - centerX;
+                let dy = touch.clientY - centerY;
+                const dist = Math.hypot(dx, dy);
+                const maxRadius = rect.width / 2 - 12;
+
+                if (dist > maxRadius) {
+                    dx = (dx / dist) * maxRadius;
+                    dy = (dy / dist) * maxRadius;
+                }
+
+                joystickKnob.style.transform = `translate(${dx}px, ${dy}px)`;
+                touchStick.x = dx / maxRadius;
+                touchStick.y = dy / maxRadius;
+                touchStick.active = true;
+            };
+
+            const resetTouch = (e) => {
+                e.preventDefault();
+                joystickKnob.style.transform = `translate(0px, 0px)`;
+                touchStick.x = 0;
+                touchStick.y = 0;
+                touchStick.active = false;
+            };
+
+            joystickZone.addEventListener('touchstart', handleTouch, { passive: false });
+            joystickZone.addEventListener('touchmove', handleTouch, { passive: false });
+            joystickZone.addEventListener('touchend', resetTouch, { passive: false });
+        }
+
+        // Touch Direct Drag on Canvas
+        canvas.addEventListener('touchstart', (e) => {
+            if (isGameOver) return;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            directTouchTarget = {
+                x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+                y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }, { passive: true });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (isGameOver) return;
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches[0];
+            directTouchTarget = {
+                x: (touch.clientX - rect.left) * (canvas.width / rect.width),
+                y: (touch.clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }, { passive: true });
+
+        canvas.addEventListener('touchend', () => { directTouchTarget = null; });
+
+        // Touch Button Actions
+        const bindTouchBtn = (btnId, keyName) => {
+            const btn = document.getElementById(btnId);
+            if (!btn) return;
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[keyName] = true; }, { passive: false });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[keyName] = false; }, { passive: false });
+            btn.addEventListener('mousedown', () => { keys[keyName] = true; });
+            btn.addEventListener('mouseup', () => { keys[keyName] = false; });
+        };
+
+        bindTouchBtn('btnAttack', 'space');
+        bindTouchBtn('btnDash', 'shift');
+        bindTouchBtn('btnShield', 'e');
+
+        // Keyboard Controls Backup for PC
+        window.addEventListener('keydown', e => {
+            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = true;
+            if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.s = true;
+            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.a = true;
+            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.d = true;
+            if (e.key === ' ') keys.space = true;
+            if (e.key === 'Shift') keys.shift = true;
+            if (e.key === 'e' || e.key === 'E') keys.e = true;
+        });
+        window.addEventListener('keyup', e => {
+            if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') keys.w = false;
+            if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') keys.s = false;
+            if (e.key === 'a' || e.key === 'A' || e.key === 'ArrowLeft') keys.a = false;
+            if (e.key === 'd' || e.key === 'D' || e.key === 'ArrowRight') keys.d = false;
+            if (e.key === ' ') keys.space = false;
+            if (e.key === 'Shift') keys.shift = false;
+            if (e.key === 'e' || e.key === 'E') keys.e = false;
+        });
+
+        function addLog(msg, color = 'text-slate-400') {
+            const div = document.createElement('div');
+            div.className = color;
+            div.textContent = `> ${msg}`;
+            logConsole.appendChild(div);
+            logConsole.scrollTop = logConsole.scrollHeight;
+            if (logConsole.children.length > 12) logConsole.removeChild(logConsole.firstChild);
+        }
+
+        let player, ai, projectiles, particles, nukeZones;
+
+        function initGame() {
+            resizeCanvas();
+
+            player = {
+                x: canvas.width * 0.2,
+                y: canvas.height * 0.5,
+                size: 22,
+                speed: 6,
+                hp: 100,
+                maxHp: 100,
+                color: '#00f0ff',
+                lastShot: 0,
+                isShielding: false
+            };
+
+            ai = {
+                x: canvas.width * 0.8,
+                y: canvas.height * 0.5,
+                size: 28,
+                speed: 9.5,
+                hp: 999999,
+                maxHp: 999999,
+                color: '#ff0055',
+                lastShot: 0,
+                lastNukeTimer: 0,
+                burstCount: 0
+            };
+
+            projectiles = [];
+            particles = [];
+            nukeZones = [];
+            isGameOver = false;
+            gameOverlay.classList.add('hidden');
+
+            playerHpBar.style.width = '100%';
+            playerHpText.textContent = `${player.hp} / ${player.maxHp}`;
+
+            addLog("WNI AI God Mode Initialized", "text-cyan-400");
+        }
+
+        function createExplosion(x, y, color, count = 15) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x, y: y,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12,
+                    size: Math.random() * 5 + 2,
+                    color: color,
+                    life: 1
+                });
+            }
+        }
+
+        function update(timestamp) {
+            // Player Movement Logic
+            let moveSpeed = player.speed;
+            if (keys.shift) {
+                moveSpeed *= 1.75;
+                createExplosion(player.x, player.y, '#00f0ff', 1);
+            }
+
+            player.isShielding = keys.e;
+
+            if (touchStick.active) {
+                player.x += touchStick.x * moveSpeed;
+                player.y += touchStick.y * moveSpeed;
+            } else if (directTouchTarget) {
+                let dx = directTouchTarget.x - player.x;
+                let dy = directTouchTarget.y - player.y;
+                let dist = Math.hypot(dx, dy);
+                if (dist > 6) {
+                    player.x += (dx / dist) * moveSpeed;
+                    player.y += (dy / dist) * moveSpeed;
+                }
+            } else {
+                if (keys.w && player.y > player.size) player.y -= moveSpeed;
+                if (keys.s && player.y < canvas.height - player.size) player.y += moveSpeed;
+                if (keys.a && player.x > player.size) player.x -= moveSpeed;
+                if (keys.d && player.x < canvas.width - player.size) player.x += moveSpeed;
+            }
+
+            player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x));
+            player.y = Math.max(player.size, Math.min(canvas.height - player.size, player.y));
+
+            // Player Fire Laser Attack
+            if (keys.space && timestamp - player.lastShot > 140) {
+                projectiles.push({
+                    x: player.x + player.size / 2,
+                    y: player.y,
+                    vx: 16,
+                    vy: (Math.random() - 0.5) * 0.8,
+                    isPlayer: true,
+                    color: '#00f0ff',
+                    radius: 5
+                });
+                player.lastShot = timestamp;
+                playSound('shoot');
+            }
+
+            // --- WNI ULTRA-INSTINCT AI LOGIC (ZERO MERCY / NO OPENINGS) ---
+            
+            // 1. Frame-Perfect Aim-Bot Tracking & Dodging
+            let dodgeDirection = 0;
+            projectiles.forEach(p => {
+                if (p.isPlayer && Math.abs(p.y - ai.y) < 60 && p.x < ai.x) {
+                    dodgeDirection = p.y > ai.y ? -1 : 1;
+                    ai.y += dodgeDirection * ai.speed * 1.5;
+                    createExplosion(ai.x, ai.y, '#ff0055', 2);
+                }
+            });
+
+            // Smooth Movement towards Player Y coordinate
+            ai.y += (player.y - ai.y) * 0.12;
+            ai.x += (canvas.width * 0.85 - ai.x) * 0.08;
+            ai.y = Math.max(ai.size, Math.min(canvas.height - ai.size, ai.y));
+
+            // 2. High-Frequency Targeted Burst Barrage
+            if (timestamp - ai.lastShot > 160) {
+                const angle = Math.atan2(player.y - ai.y, player.x - ai.x);
+                projectiles.push({
+                    x: ai.x - ai.size / 2,
+                    y: ai.y,
+                    vx: Math.cos(angle) * 16,
+                    vy: Math.sin(angle) * 16,
+                    isPlayer: false,
+                    color: '#ff0055',
+                    radius: 6
+                });
+                ai.lastShot = timestamp;
+            }
+
+            // 3. SUDDEN TACTICAL BOOM ATTACK (Unavoidable Instant KO Payload)
+            if (timestamp - ai.lastNukeTimer > 2800) {
+                // Places Tactical Boom DIRECTLY centered on player position
+                nukeZones.push({
+                    x: player.x,
+                    y: player.y,
+                    radius: 120,
+                    timer: 35, // Fast 35 frames warning countdown
+                    maxTimer: 35
+                });
+                ai.lastNukeTimer = timestamp;
+                addLog("⚠️ TACTICAL BOOM DETECTED!", "text-red-500 font-bold");
+            }
+
+            // Update Tactical Nuke Zones
+            for (let i = nukeZones.length - 1; i >= 0; i--) {
+                let nz = nukeZones[i];
+                nz.timer--;
+                if (nz.timer <= 0) {
+                    playSound('boom');
+                    createExplosion(nz.x, nz.y, '#ff0033', 60);
+                    createExplosion(nz.x, nz.y, '#ffcc00', 40);
+
+                    // Check if player is hit
+                    let dist = Math.hypot(player.x - nz.x, player.y - nz.y);
+                    if (dist < nz.radius + player.size / 2) {
+                        player.hp = 0;
+                        playerHpBar.style.width = '0%';
+                        triggerAiWin("TACTICAL BOOM INSTANT OBLITERATION!");
+                    }
+
+                    nukeZones.splice(i, 1);
+                }
+            }
+
+            // Update Projectiles
+            for (let i = projectiles.length - 1; i >= 0; i--) {
+                let p = projectiles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) {
+                    projectiles.splice(i, 1);
+                    continue;
+                }
+
+                // AI Laser Hits Player
+                if (!p.isPlayer) {
+                    let dist = Math.hypot(p.x - player.x, p.y - player.y);
+                    if (dist < player.size / 2 + p.radius) {
+                        if (player.isShielding) {
+                            playSound('parry');
+                            createExplosion(player.x, player.y, '#a855f7', 6);
+                        } else {
+                            player.hp -= 20;
+                            createExplosion(player.x, player.y, '#00f0ff', 8);
+                            playerHpBar.style.width = Math.max(0, (player.hp / player.maxHp) * 100) + '%';
+                            playerHpText.textContent = `${Math.max(0, player.hp)} / ${player.maxHp}`;
+                            if (player.hp <= 0) triggerAiWin("HIGH-SPEED LASER BARRAGE KO");
+                        }
+                        projectiles.splice(i, 1);
+                    }
+                }
+
+                // Player Laser Absorbed/Deflected by AI Shield
+                if (p.isPlayer) {
+                    let dist = Math.hypot(p.x - ai.x, p.y - ai.y);
+                    if (dist < ai.size + 18) {
+                        createExplosion(p.x, p.y, '#ff0055', 6);
+                        projectiles.splice(i, 1);
+                    }
+                }
+            }
+
+            // Particle Updates
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let pt = particles[i];
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.life -= 0.04;
+                if (pt.life <= 0) particles.splice(i, 1);
+            }
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Render Arena Cyber Grid Background
+            ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 35) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += 35) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+            }
+
+            // Render Tactical Boom Warning Circles
+            nukeZones.forEach(nz => {
+                ctx.save();
+                const alpha = (1 - nz.timer / nz.maxTimer) * 0.6 + 0.25;
+                ctx.fillStyle = `rgba(239, 68, 68, ${alpha})`;
+                ctx.strokeStyle = '#ff0033';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([6, 6]);
+                ctx.beginPath();
+                ctx.arc(nz.x, nz.y, nz.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '900 11px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.fillText(`💥 BOOM DETONATION`, nz.x, nz.y + 4);
+                ctx.restore();
+            });
+
+            // Render Player
+            ctx.save();
+            ctx.shadowBlur = 18;
+            ctx.shadowColor = player.color;
+            ctx.fillStyle = player.color;
+            ctx.beginPath();
+            ctx.roundRect(player.x - player.size / 2, player.y - player.size / 2, player.size, player.size, 6);
+            ctx.fill();
+
+            // Player Shield Visual Effect
+            if (player.isShielding) {
+                ctx.strokeStyle = '#a855f7';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.size + 10, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // Render WNI AI Boss
+            ctx.save();
+            ctx.shadowBlur = 25;
+            ctx.shadowColor = ai.color;
+            ctx.fillStyle = ai.color;
+            ctx.beginPath();
+            ctx.roundRect(ai.x - ai.size / 2, ai.y - ai.size / 2, ai.size, ai.size, 8);
+            ctx.fill();
+
+            // AI Invincible Shield Ring
+            ctx.strokeStyle = 'rgba(255, 0, 85, 0.7)';
+            ctx.lineWidth = 3.5;
+            ctx.beginPath();
+            ctx.arc(ai.x, ai.y, ai.size + 14, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+
+            // Render Projectiles
+            projectiles.forEach(p => {
+                ctx.save();
+                ctx.shadowBlur = 12;
+                ctx.shadowColor = p.color;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+
+            // Render Particles
+            particles.forEach(pt => {
+                ctx.save();
+                ctx.globalAlpha = pt.life;
+                ctx.fillStyle = pt.color;
+                ctx.fillRect(pt.x, pt.y, pt.size, pt.size);
+                ctx.restore();
+            });
+        }
+
+        function triggerAiWin(reason) {
+            isGameOver = true;
+            aiScore++;
+            aiScoreEl.textContent = aiScore;
+            addLog(`DEFEAT: ${reason}`, "text-red-500 font-bold");
+
+            document.getElementById('overlayTitle').textContent = "K.O. - WNI AI VICTORY";
+            document.getElementById('overlaySub').textContent = `${reason}. Absolute zero openings.`;
+            gameOverlay.classList.remove('hidden');
+        }
+
+        function restartRound() {
+            initGame();
+        }
+
+        function gameLoop(timestamp) {
+            if (!isGameOver) {
+                update(timestamp);
+                render();
+            }
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.onload = function() {
+            initGame();
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
